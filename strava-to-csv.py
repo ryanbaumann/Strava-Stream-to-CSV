@@ -13,7 +13,7 @@ port = 5000
 url = 'http://localhost:%d/authorized' % port
 allDone = False
 types = ['time', 'distance', 'latlng', 'altitude', 'velocity_smooth', 'moving', 'grade_smooth', 'temp']
-limit = 1
+limit = 10
 
 #Create the strava client, and open the web browser for authentication
 client = stravalib.client.Client()
@@ -112,6 +112,7 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     print "looping through activities..."
     df_lst = {}
     for act in activities:
+        print act.name
         df_lst[act.start_date] = ParseActivity(act,types)
 
     #create the concatenated df and fill null values
@@ -129,13 +130,18 @@ class MyHandler(BaseHTTPServer.BaseHTTPRequestHandler):
     #Index by startdate and timestamp, and drop arbitrary columns
     df_total = df_total.set_index(['act_startDate','timestamp'])
     df_total.drop(['latlng', 'level_0'], axis=1, inplace=True)
-    print df_total.head(2)
 
     #Write the file to a CSV - this will end up in your working directory
     now = datetime.datetime.now()
     df_total.to_csv('RideData_' + str(now.strftime('%Y%m%d%H%M%S')) + '.csv')
+    print 'script complete!'
 
+if __name__=='__main__':
 ###Run the program to login and grab data###
-httpd = BaseHTTPServer.HTTPServer(('localhost', port), MyHandler)
-while not allDone:
-    httpd.handle_request()
+    try:
+        httpd = BaseHTTPServer.HTTPServer(('localhost', port), MyHandler)
+        httpd.handle_request()
+    except KeyboardInterrupt:
+                    # Allow ^C to interrupt from any thread.
+                    sys.stdout.write('\033[0m')
+                    sys.stdout.write('User Interupt\n')
